@@ -34,7 +34,7 @@ const ContestList = () => {
   const fetchContests = async () => {
     try {
       const data = await contestsAPI.getContests();
-      setContests(data || []);
+      setContests(data?.results || data || []);
     } catch (error) {
       console.error('Failed to fetch contests:', error);
     } finally {
@@ -59,7 +59,24 @@ const ContestList = () => {
         </Title>
 
         {contests.length === 0 ? (
-          <Empty description="暂无竞赛活动" style={{ marginTop: 60 }} />
+          <div style={{ textAlign: 'center', padding: '60px 0' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%)',
+              borderRadius: 12,
+              padding: '60px 40px',
+              maxWidth: 560,
+              margin: '0 auto',
+            }}>
+              <TrophyOutlined style={{ fontSize: 64, color: '#003d7a', marginBottom: 24 }} />
+              <Title level={3} style={{ color: '#003d7a', marginBottom: 12 }}>
+                竞赛即将开启
+              </Title>
+              <Paragraph style={{ fontSize: 16, color: '#666', marginBottom: 0 }}>
+                北京语言大学读写研究中心将定期举办读写竞赛活动，欢迎广大师生积极参与。
+                <br />请关注本页面，竞赛信息将及时更新。
+              </Paragraph>
+            </div>
+          </div>
         ) : (
           <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
             {contests.map((contest) => (

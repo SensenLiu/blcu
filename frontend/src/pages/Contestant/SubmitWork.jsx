@@ -34,7 +34,7 @@ const SubmitWork = () => {
   const fetchContests = async () => {
     try {
       const data = await contestsAPI.getContests();
-      const openContests = data.filter((c) => c.is_open);
+      const openContests = (data?.results || data || []).filter((c) => c.is_open);
       setContests(openContests);
     } catch (error) {
       console.error('Failed to fetch contests:', error);
@@ -50,7 +50,7 @@ const SubmitWork = () => {
 
     try {
       const data = await contestsAPI.getCategories(contestId);
-      setCategories(data || []);
+      setCategories(data?.results || data || []);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
     }

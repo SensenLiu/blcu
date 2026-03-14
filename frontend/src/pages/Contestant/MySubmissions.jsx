@@ -18,7 +18,7 @@ const MySubmissions = () => {
   const fetchSubmissions = async () => {
     try {
       const data = await contestsAPI.getMySubmissions();
-      setSubmissions(data || []);
+      setSubmissions(data?.results || data || []);
     } catch (error) {
       console.error('Failed to fetch submissions:', error);
     } finally {

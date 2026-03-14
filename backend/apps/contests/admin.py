@@ -1,5 +1,49 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.shortcuts import render, redirect
 from .models import Contest, Category, Submission
+from apps.reviews.models import Assignment
+from apps.users.models import CustomUser
+
+
+def bulk_assign_to_judge(modeladmin, request, queryset):
+    """批量分配参赛作品给评委"""
+    if 'apply' in request.POST:
+        judge_id = request.POST.get('judge')
+        submission_ids = request.POST.getlist('submission_ids')
+        if not judge_id:
+            modeladmin.message_user(request, '请选择评委', messages.ERROR)
+            return redirect('.')
+        judge = CustomUser.objects.get(id=judge_id)
+        submissions = Submission.objects.filter(id__in=submission_ids)
+        created_count = 0
+        skipped_count = 0
+        for submission in submissions:
+            _, created = Assignment.objects.get_or_create(
+                submission=submission,
+                judge=judge,
+            )
+            if created:
+                created_count += 1
+            else:
+                skipped_count += 1
+        msg = f'成功分配 {created_count} 件作品给 {judge.full_name or judge.username}'
+        if skipped_count:
+            msg += f'，{skipped_count} 件已跳过（已存在分配）'
+        modeladmin.message_user(request, msg, messages.SUCCESS)
+        return redirect('..')
+
+    judges = CustomUser.objects.filter(role='judge', is_active=True)
+    context = {
+        **modeladmin.admin_site.each_context(request),
+        'title': '批量分配评委',
+        'queryset': queryset,
+        'judges': judges,
+        'opts': modeladmin.model._meta,
+    }
+    return render(request, 'admin/bulk_assign_judge.html', context)
+
+
+bulk_assign_to_judge.short_description = '批量分配给评委'
 
 
 class CategoryInline(admin.TabularInline):
@@ -37,6 +81,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Submission)
 class SubmissionAdmin(admin.ModelAdmin):
+    actions = [bulk_assign_to_judge]
     """参赛作品管理后台"""
     list_display = (
         'submission_number', 'work_title', 'contestant', 'contest',

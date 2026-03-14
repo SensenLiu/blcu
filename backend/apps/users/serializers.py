@@ -16,12 +16,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         required=True,
         style={'input_type': 'password'}
     )
+    role = serializers.ChoiceField(
+        choices=['contestant', 'judge'],
+        default='contestant',
+        required=False,
+    )
 
     class Meta:
         model = CustomUser
         fields = (
             'username', 'email', 'password', 'password_confirm',
-            'full_name', 'phone', 'organization'
+            'full_name', 'phone', 'organization', 'role'
         )
         extra_kwargs = {
             'email': {'required': True},
@@ -36,6 +41,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """创建用户"""
         validated_data.pop('password_confirm')
+        role = validated_data.pop('role', 'contestant')
+        is_judge = (role == 'judge')
         user = CustomUser.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
@@ -43,7 +50,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             full_name=validated_data.get('full_name', ''),
             phone=validated_data.get('phone', ''),
             organization=validated_data.get('organization', ''),
-            role='contestant'  # 默认注册为参赛选手
+            role=role,
+            is_active=not is_judge,
+            pending_approval=is_judge,
         )
         return user
 

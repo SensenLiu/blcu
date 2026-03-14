@@ -1,0 +1,62 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<h1>批量分配评委</h1>
+
+<p>已选择 <strong>{{ queryset.count }}</strong> 件参赛作品，请选择要分配的评委：</p>
+
+<form method="post">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="bulk_assign_to_judge">
+  {% for obj in queryset %}
+    <input type="hidden" name="submission_ids" value="{{ obj.pk }}">
+  {% endfor %}
+
+  <div style="margin: 20px 0;">
+    <label for="judge"><strong>选择评委：</strong></label>
+    <select name="judge" id="judge" required style="margin-left:10px; padding:5px; min-width:200px;">
+      <option value="">-- 请选择评委 --</option>
+      {% for judge in judges %}
+        <option value="{{ judge.id }}">
+          {{ judge.full_name|default:judge.username }}（{{ judge.username }}）
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  {% if not judges %}
+    <p style="color:red;">暂无可用评委账号，请先创建评委用户。</p>
+  {% endif %}
+
+  <div style="margin-top: 16px;">
+    <input type="submit" name="apply" value="确认分配" class="default"
+           {% if not judges %}disabled{% endif %}>
+    <a href="../" style="margin-left: 16px;">取消</a>
+  </div>
+</form>
+
+<h3 style="margin-top: 32px;">待分配作品列表：</h3>
+<table style="border-collapse: collapse; width: 100%;">
+  <thead>
+    <tr style="background: #f8f8f8;">
+      <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">参赛编号</th>
+      <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">作品标题</th>
+      <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">参赛者</th>
+      <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">竞赛</th>
+      <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">组别</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for obj in queryset %}
+    <tr>
+      <td style="padding: 8px; border: 1px solid #ddd;">{{ obj.submission_number }}</td>
+      <td style="padding: 8px; border: 1px solid #ddd;">{{ obj.work_title }}</td>
+      <td style="padding: 8px; border: 1px solid #ddd;">{{ obj.contestant.full_name|default:obj.contestant.username }}</td>
+      <td style="padding: 8px; border: 1px solid #ddd;">{{ obj.contest.name }}</td>
+      <td style="padding: 8px; border: 1px solid #ddd;">{{ obj.category.name }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

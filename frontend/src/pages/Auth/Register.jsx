@@ -1,30 +1,48 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Form, Input, Button, Card, Typography, message } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, BankOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Card, Typography, Radio, Alert, Result } from 'antd';
+import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, BankOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { useAuth } from '../../contexts/AuthContext';
 
-const { Title } = Typography;
+const { Title, Paragraph } = Typography;
 
 const Register = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [pendingApproval, setPendingApproval] = useState(false);
+  const [role, setRole] = useState('contestant');
 
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      await register(values);
-      message.success('注册成功！');
-      setTimeout(() => {
+      const result = await register(values);
+      if (result?.pending_approval) {
+        setPendingApproval(true);
+      } else {
         navigate('/contestant');
-      }, 500);
+      }
     } catch (error) {
       console.error('Register failed:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  if (pendingApproval) {
+    return (
+      <div style={{ minHeight: 'calc(100vh - 64px)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0f2f5' }}>
+        <Card style={{ width: 500, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+          <Result
+            icon={<CheckCircleOutlined style={{ color: '#003d7a' }} />}
+            title="评委注册申请已提交"
+            subTitle="请等待管理员审批，审批通过后即可使用账号登录。"
+            extra={<Button type="primary" onClick={() => navigate('/login')}>返回登录</Button>}
+          />
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -39,11 +57,34 @@ const Register = () => {
     >
       <Card style={{ width: 500, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Title level={2}>选手注册</Title>
+          <Title level={2}>注册账号</Title>
           <p style={{ color: '#999' }}>北京语言大学读写研究中心</p>
         </div>
 
-        <Form name="register" onFinish={onFinish} size="large" autoComplete="off" layout="vertical">
+        <Form
+          name="register"
+          onFinish={onFinish}
+          size="large"
+          autoComplete="off"
+          layout="vertical"
+          initialValues={{ role: 'contestant' }}
+        >
+          <Form.Item label="注册身份" name="role">
+            <Radio.Group onChange={(e) => setRole(e.target.value)}>
+              <Radio value="contestant">参赛选手</Radio>
+              <Radio value="judge">评委</Radio>
+            </Radio.Group>
+          </Form.Item>
+
+          {role === 'judge' && (
+            <Alert
+              message="评委注册需经管理员审批，审批通过后方可登录"
+              type="info"
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+          )}
+
           <Form.Item
             label="用户名"
             name="username"
@@ -110,7 +151,7 @@ const Register = () => {
 
           <Form.Item>
             <Button type="primary" htmlType="submit" block loading={loading}>
-              注册
+              {role === 'judge' ? '提交注册申请' : '注册'}
             </Button>
           </Form.Item>
 

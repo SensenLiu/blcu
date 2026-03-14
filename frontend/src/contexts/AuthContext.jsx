@@ -38,6 +38,10 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (data) => {
     const response = await authAPI.register(data);
+    // 评委注册需等待审批，不会返回 tokens
+    if (response.pending_approval) {
+      return response;
+    }
     const { user, tokens } = response;
     setTokens(tokens.access, tokens.refresh);
     setUser(user);

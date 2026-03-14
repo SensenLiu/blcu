@@ -18,7 +18,7 @@ const Dashboard = () => {
   const fetchAssignments = async () => {
     try {
       const data = await reviewsAPI.getMyAssignments();
-      setAssignments(data || []);
+      setAssignments(data?.results || data || []);
     } catch (error) {
       console.error('Failed to fetch assignments:', error);
     } finally {

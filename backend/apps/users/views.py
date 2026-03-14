@@ -27,9 +27,15 @@ class UserRegistrationView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
-        # 生成 JWT Token
-        refresh = RefreshToken.for_user(user)
+        # 评委注册需等待审批，不发放 Token
+        if user.pending_approval:
+            return Response({
+                'message': '评委注册申请已提交，请等待管理员审批后登录',
+                'pending_approval': True,
+            }, status=status.HTTP_201_CREATED)
 
+        # 选手注册直接发放 Token
+        refresh = RefreshToken.for_user(user)
         return Response({
             'message': '注册成功',
             'user': UserSerializer(user).data,
@@ -60,6 +66,16 @@ def login_view(request):
     user = authenticate(username=username, password=password)
 
     if user is None:
+        # 区分：待审批 vs 用户名密码错误
+        try:
+            inactive_user = CustomUser.objects.get(username=username)
+            if inactive_user.pending_approval and inactive_user.check_password(password):
+                return Response(
+                    {'error': '账号待管理员审批，审批通过后即可登录'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        except CustomUser.DoesNotExist:
+            pass
         return Response(
             {'error': '用户名或密码错误'},
             status=status.HTTP_401_UNAUTHORIZED

@@ -39,6 +39,12 @@ class CustomUser(AbstractUser):
         verbose_name='所属单位'
     )
 
+    pending_approval = models.BooleanField(
+        default=False,
+        verbose_name='待审批',
+        db_index=True
+    )
+
     class Meta:
         db_table = 'users_customuser'
         verbose_name = '用户'
